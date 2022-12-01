@@ -19,7 +19,6 @@ int main() {
     }
     int top = 0;
     for (int i = 0; i != 3 && !queue.empty(); ++i) {
-        std::cout << queue.top() << "\n";
         top += queue.top();
 	queue.pop();
     }
