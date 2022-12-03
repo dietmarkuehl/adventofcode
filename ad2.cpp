@@ -7,14 +7,13 @@ int main() {
     std::priority_queue<int> queue;
     int current = 0;
     for (std::string line; std::getline(std::cin, line); ) {
-        if (line.empty()) {
+       int value{};
+       if (std::istringstream(line) >> value) {
+            current += value;
+       }
+       else {
 	    queue.push(current);
             current = 0;
-        }
-        else {
-            int value{};
-            std::istringstream(line) >> value;
-            current += value;
         }
     }
     int top = 0;

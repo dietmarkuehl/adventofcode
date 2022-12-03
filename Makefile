@@ -1,4 +1,4 @@
-NAME     = ad1
+NAME     = ad6
 CXX      = /opt/llvm-15.0.4/bin/clang++ 
 CXX      = clang++ 
 CC       = $(CXX)
@@ -6,10 +6,16 @@ CXXFLAGS = -W -Wall -O2 -std=c++20
 
 .PHONY: default clean run
 
-default: $(NAME).cpp run
+default: $(NAME).cpp test
 
 run: $(NAME)
 	@if [ -f $(NAME).in ]; then ./$(NAME) < $(NAME).in; else ./$(NAME); fi
+	@if [ -f $(NAME).exp ]; then cat $(NAME).exp; fi
+
+test: $(NAME)
+	@if [ -f $(NAME)-test.in ]; then ./$(NAME) < $(NAME)-test.in; else ./$(NAME); fi
+	@if [ -f $(NAME)-test.exp ]; then cat $(NAME)-test.exp; fi
+
 
 $(NAME): $(NAME).o
 

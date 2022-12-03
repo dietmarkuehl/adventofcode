@@ -6,14 +6,13 @@ int main() {
     int max = 0;
     int current = 0;
     for (std::string line; std::getline(std::cin, line); ) {
-        if (line.empty()) {
-            max = std::max(current, max);
-            current = 0;
+        int value{};
+        if (std::istringstream(line) >> value) {
+            current += value;
         }
         else {
-            int value{};
-            std::istringstream(line) >> value;
-            current += value;
+            max = std::max(current, max);
+            current = 0;
         }
     }
     std::cout << max << "\n";
