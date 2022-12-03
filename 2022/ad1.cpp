@@ -1,13 +1,13 @@
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <sstream>
 
 int main() {
-    int max = 0;
-    int current = 0;
+    int max{};
+    int current{};
     for (std::string line; std::getline(std::cin, line); ) {
-        int value{};
-        if (std::istringstream(line) >> value) {
+        if (int value{}; std::istringstream(line) >> value) {
             current += value;
         }
         else {

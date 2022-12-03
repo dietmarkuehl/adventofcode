@@ -1,5 +1,4 @@
 NAME     = ad6
-CXX      = /opt/llvm-15.0.4/bin/clang++ 
 CXX      = clang++ 
 CC       = $(CXX)
 CXXFLAGS = -W -Wall -O2 -std=c++20
