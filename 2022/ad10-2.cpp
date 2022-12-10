@@ -31,7 +31,6 @@ int main() {
         }
     }
     cpu c;
-    int total{};
     auto it = program.begin();
     for (int i = 0; it != program.end(); ++i) {
         int pos = i % 40;
