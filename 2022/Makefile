@@ -1,4 +1,4 @@
-NAME     = ad09-2
+NAME     = ad10-2
 CXX      = clang++ 
 CC       = $(CXX)
 CXXFLAGS = -W -Wall -O2 -std=c++20
@@ -14,7 +14,6 @@ run: $(NAME)
 test: $(NAME)
 	@if [ -f $(NAME)-test.in ]; then ./$(NAME) < $(NAME)-test.in; else ./$(NAME); fi
 	@if [ -f $(NAME)-test.exp ]; then cat $(NAME)-test.exp; fi
-
 
 $(NAME): $(NAME).o
 
