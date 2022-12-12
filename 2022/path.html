@@ -1,0 +1,264 @@
+<html>
+    <head>
+        <title>Advent of Code 2022: Rope</title>
+        <script type="text/javascript">
+let example = ""
+    + "Sabqponm\n"
+    + "abcryxxl\n"
+    + "accszExk\n"
+    + "acctuvwj\n"
+    + "abdefghi\n"
+    ;
+
+let puzzle1 = ""
+    + "abaacccccccccccccaaaaaaaccccccccccccccccccccccccccccccccccaaaaaa\n"
+    + "abaaccccccccccccccaaaaaaaaaaccccccccccccccccccccccccccccccccaaaa\n"
+    + "abaaaaacccccccccaaaaaaaaaaaaccccccccccccccccccccccccccccccccaaaa\n"
+    + "abaaaaaccccccccaaaaaaaaaaaaaacccccccccccccccccdcccccccccccccaaaa\n"
+    + "abaaaccccccccccaaaaaaaaccacacccccccccccccccccdddcccccccccccaaaaa\n"
+    + "abaaacccccccccaaaaaaaaaaccaaccccccccccccciiiiddddcccccccccccaccc\n"
+    + "abcaaaccccccccaaaaaaaaaaaaaaccccccccccciiiiiijddddcccccccccccccc\n"
+    + "abccaaccccccccaccaaaaaaaaaaaacccccccccciiiiiijjddddccccaaccccccc\n"
+    + "abccccccccccccccaaacaaaaaaaaaaccccccciiiiippijjjddddccaaaccccccc\n"
+    + "abccccccccccccccaacccccaaaaaaacccccciiiippppppjjjdddddaaaaaacccc\n"
+    + "abccccccccccccccccccccaaaaaaccccccckiiippppppqqjjjdddeeeaaaacccc\n"
+    + "abccccccccccccccccccccaaaaaaccccckkkiippppuupqqjjjjdeeeeeaaccccc\n"
+    + "abccccccccccccccccccccccccaaccckkkkkkipppuuuuqqqjjjjjeeeeeaccccc\n"
+    + "abccccccccccccccccccccccccccckkkkkkoppppuuuuuvqqqjjjjjkeeeeccccc\n"
+    + "abcccccccccccccccccccccccccckkkkooooppppuuxuvvqqqqqqjkkkeeeecccc\n"
+    + "abccaaccaccccccccccccccccccckkkoooooopuuuuxyvvvqqqqqqkkkkeeecccc\n"
+    + "abccaaaaacccccaaccccccccccckkkoooouuuuuuuxxyyvvvvqqqqqkkkkeecccc\n"
+    + "abcaaaaacccccaaaacccccccccckkkooouuuuxxxuxxyyvvvvvvvqqqkkkeeeccc\n"
+    + "abcaaaaaaaaaaaaacccccccccccjjjooottuxxxxxxxyyyyyvvvvrrrkkkeecccc\n"
+    + "abcccaaaacaaaaaaaaacaaccccccjjoootttxxxxxxxyyyyyyvvvrrkkkfffcccc\n"
+    + "SbccaacccccaaaaaaaaaaaccccccjjjooottxxxxEzzzyyyyvvvrrrkkkfffcccc\n"
+    + "abcccccccccaaaaaaaaaaaccccccjjjooootttxxxyyyyyvvvvrrrkkkfffccccc\n"
+    + "abcaacccccaaaaaaaaaaaccccccccjjjooottttxxyyyyywwvrrrrkkkfffccccc\n"
+    + "abaaacccccaaaaaaaaaaaaaacccccjjjjonnttxxyyyyyywwwrrlllkfffcccccc\n"
+    + "abaaaaaaaaaaacaaaaaaaaaaccccccjjjnnnttxxyywwyyywwrrlllffffcccccc\n"
+    + "abaaaaaaaaaaaaaaaaaaaaaaccccccjjjnntttxxwwwwwywwwrrlllfffccccccc\n"
+    + "abaaccaaaaaaaaaaaaaaacccccccccjjjnntttxwwwsswwwwwrrlllfffccccccc\n"
+    + "abaacccaaaaaaaacccaaacccccccccjjinnttttwwsssswwwsrrlllgffacccccc\n"
+    + "abccccaaaaaaccccccaaaccccccccciiinnntttsssssssssssrlllggaacccccc\n"
+    + "abccccaaaaaaaccccccccccaaccccciiinnntttsssmmssssssrlllggaacccccc\n"
+    + "abccccaacaaaacccccccaacaaaccccciinnnnnnmmmmmmmsssslllgggaaaacccc\n"
+    + "abccccccccaaacccccccaaaaacccccciiinnnnnmmmmmmmmmmllllgggaaaacccc\n"
+    + "abaaaccccccccccccccccaaaaaacccciiiinnnmmmhhhmmmmmlllgggaaaaccccc\n"
+    + "abaaaaacccccccccccaaaaaaaaaccccciiiiiiihhhhhhhhmmlgggggaaacccccc\n"
+    + "abaaaaaccccaaccccaaaaaaacaacccccciiiiihhhhhhhhhhggggggcaaacccccc\n"
+    + "abaaaaccccaaaccccaaaacaaaaacccccccciiihhaaaaahhhhggggccccccccccc\n"
+    + "abaaaaaaacaaacccccaaaaaaaaaccccccccccccccaaaacccccccccccccccccaa\n"
+    + "abaacaaaaaaaaaaaccaaaaaaaaccccccccccccccccaaaccccccccccccccccaaa\n"
+    + "abcccccaaaaaaaaacccaaaaaaaccccccccccccccccaacccccccccccccccccaaa\n"
+    + "abccccccaaaaaaaaaaaaaaaaacccccccccccccccccaaacccccccccccccaaaaaa\n"
+    + "abcccccaaaaaaaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccaaaaaa\n"
+    ;
+
+let puzzle2 = ""
+    + "abcccccccccccccccccccccccccccccccccccccaaaaaaacccccccaaaaaaaaaaaccccccccccccccccccccaaacaaaaaaaacccccccccccccccccccccccccccccccccccaaaaa\n"
+    + "abccccccccccccccccccaaccaacccccccccccccaaaaaaaccccccccaaaaaaaaaaacccccccaaaaccccccccaaaaaaaaaaaaacccccccccccccccccccccccccccccccccaaaaaa\n"
+    + "abccccccccccccccccccaaaaaaccccccccccaaaccaaaaaacccccccaaaaaaaaaaccccccccaaaaccccccaaaaaaaaaaaaaaacccccccccccccccccccaaacccccccccccaaaaaa\n"
+    + "abcccccccccccccccccccaaaaacccccccccccaaccaacaaaccccccaaaaaaaaaaaccccccccaaaacccccaaaaaaaaacaaaaaaacccccccccccccccccaaaacccccccccccaaacaa\n"
+    + "abccccccccccccccccccaaaaaaccccccccaacaaaaaacccccccccaaaaaaaaaaaaacaaaccccaaccccccaaaaaaaaacaacccccccccccccccccaaaccaaaacccccccccccccccaa\n"
+    + "abcccccccccccccccccaaaaaaaacccccccaaaaaaaaccccccaaaaaaaacaaaacaaaaaaacccccccccaaccccaaaaaacaaacccccccccccccccaaaakkkaaccccccccccccccccaa\n"
+    + "abcccccccccccccccccaaaaaaaaccccccccaaaaaccccaacccaaaaaaaaaaaacaaaaaaccccccccccaacccaaaaaaaaaaaacccccccccccccccakkkkkklcccccccccccccccccc\n"
+    + "abaaacccccccccccaaccccaaccccccccccccaaaaaccaaacccaaaaaaaaaaaaaaaaaaaaccccccaaaaaaaacaacccaaaaaaccccccccccccccckkkkkkkllcccccccaaaccccccc\n"
+    + "abaaaacccccccaacaaccccaacccccccccccaaacaaaaaaaccccaaaaaaaaaaaaaaaaaaaacccccaaaaaaaaaaaccccaaaaacccccccccccccckkkksssllllccccccaaaaaacccc\n"
+    + "abaaaacccccccaaaaacccccccccccaaaccccaacaaaaaaccccaaaaaacaaaaaaaaaaaaaacccccccaaaaccccccccaaaaacccccccccccccckkkksssssllllcccccaaaaaacccc\n"
+    + "abaaacccccccccaaaaaaccccccccaaaaccccccccaaaaaaaacaaaaaaaaaaaaacaaacaaacccccccaaaaacccccccaaaaacccccccccccccjkkkrssssssllllccccccaaaccccc\n"
+    + "abccccccccccaaaaaaaaccccccccaaaacccccccaaaaaaaaacaacaaaaaaaaaacaaaccccccccccaaacaaccccccccccccccccccccccccjjkkrrsuuussslllllcccccaaccccc\n"
+    + "abccaaacccccaaaaacccccccccccaaaaccccccaaaaaaaaaacccccaaaaaaaaaacaaccccccccccaacccacccccccccccccccccccccjjjjjjrrrsuuuussslllllmcccddacccc\n"
+    + "abcccaaaccaccacaaaccccccccccccccccccccaaaaaaaccccccccccaaaaaaaaccccccaacccccccccccaaaaacccccccccccccccjjjjjjrrrruuuuuusssllmmmmmddddcccc\n"
+    + "abccaaaaaaaacccaaaccccccccccccccccaaacccccaaaccccccccccccaaacccccccccaacccccccccccaaaaacccccccccccccjjjjjrrrrrruuuxuuussqqqqmmmmmdddcccc\n"
+    + "abcaaaaaaaacccaaaaaacaaaaaccccccaaaaaaccccaaacccaaccccccccaaccccccaaaaaaaaccaaacccaaaaaaccccccccccccjjjjrrrrrruuuxxxuuuqqqqqqqmmmdddcccc\n"
+    + "abaaaaaaaaaccccaaaaacaaaaaccccccaaaaaaaaccccccaaaaaaccccccccccccccaaaaaaaaccaaacaaaaaaaacccccccccccjjjjrrrtttuuuuxxxyvvvvvqqqqmmmdddcccc\n"
+    + "abaaaaaaaaaccaaaaaaacaaaaaaccccccaaaaaaaacccccaaaaaaccccccccccccccccaaaaccaaaaaaaaaaaaaacccccccccaaiijqqqrttttuuuxxyyvvvvvvvqqmmmdddcccc\n"
+    + "abcaaaaaaaaccaaaaaaaaaaaaaacccccaaaaaaaacccccccaaaacccccaaaaccccccccaaaaacaaaaaaaaccaaccccccccccaaaiiiqqqttttxxxxxxyyyyyyvvvqqmmmdddcccc\n"
+    + "abcccaaaaaaacaaaaaaaaaaaaaacccccaaaaaaaaaaaccccaaaaccccaaaaacccccccaaaaaacaaaaaaacccccccccccccccaaaiiiqqqtttxxxxxxxyyyyyyvvqqqmmmdddcccc\n"
+    + "SbcccaacccaccccaaacacccaaacccccccccaaaaaaaaacccaccaccccaaaaaaccccccaaccaacccaaaaaccccccccccccccccaaiiiiqqtttxxxxEzzzyyyyvvvqqqmmmddccccc\n"
+    + "abccaaaccccccccaaccccccccccccccccccaaaaaaaaccccccccccccaaaaaaccccccccccccccaaacaaaccaacccccccccccccciiiqqqttttxxxyyyyyvvvvqqqmmmdddccccc\n"
+    + "abccccccccccccccccccccccccccccccccaaaaaaaccccccccccccccaaaaaacccccccccccccccaacccccaaaaaaaccccccccccciiiqqqttttxxyyyyyvvvrrrnnneeecccccc\n"
+    + "abcaaaaccccccccccccccccccccccccccaaaaaaaaccccccccccccccccaacccccccccccccccccccccccccaaaaacccccccccccciiiqqqqttxxyyyyyyyvvrrnnnneeecccccc\n"
+    + "abcaaaaacccccccccccccccccccccccccaaaacaaacccaccaaacccccccccccccccccccccccccaaaccccaaaaaaaccccccccccccciiiqqqttwwyywwyyywwrrnnneeeccccccc\n"
+    + "abaaaaaacccaccaccccccccccccccccccaaaaccaacccaaaaaaccccccccccccccccaaaccccaaaaaacccaaaaaaaacccccccccccciiiqqqtswwwwwwwwwwwrrnnneeeccccccc\n"
+    + "abaaaaaacccaaaaccccccccaaaacccccccaaacccccccaaaaaacccccccccccccccaaaaaaccaaaaaacccaaaaaaaacaaccccccaaciiiqppsswwwwsswwwwwrrrnneeeccccccc\n"
+    + "abcaaaaacccaaaaacccccccaaaacccccccccccccccccaaaaaaaccccccccccccccaaaaaaccaaaaaacccccaaaaaaaaaccccccaaaahhpppssswwsssswwwwrrrnneeeacccccc\n"
+    + "abcaaaccccaaaaaacccccccaaaaccccccccccccccccaaaaaaaaccccccccccccccaaaaacccaaaaaccccccaacaaaaaaaaccaaaaaahhpppsssssssssrrrrrrnnneeeacccccc\n"
+    + "abccccccccaaaaaaccccccccaacccccccccccccccccaaaaaaaaccccaacccccccccaaaaaccaaaaacccccccccaaaaaaaaccaaaaachhpppssssssoosrrrrrrnnneeeaaacccc\n"
+    + "abccccccccccaaccccccccccccccccaaaaaccccccaacccaaacccaaaaacccccccccaacaacccccccccccccccccaaaaaaacccaaaaahhhppppssppooooorroonnffeaaaacccc\n"
+    + "abaaccccccccccccccccccccccccccaaaaaccccccaacccaaaccccaaaaacccccccccccccccccccccccccccaacaaaaacccccaacaahhhppppppppoooooooooonfffaaaacccc\n"
+    + "abaccccccccccccccccccccccccccaaaaaacccaaaaaaaacccccccaaaaaccccccccccccccccccccccccaaaaaaaaaaaccccccccccchhhpppppppgggoooooooffffaacccccc\n"
+    + "abaccccccccccccccccccccccccccaaaaaacccaaaaaaaaccccccaaaaaccccccacccaacccccccccccccaaaaaccccaaccccccccccchhhhhhggggggggfffffffffaaacccccc\n"
+    + "abaacccccccccccccccccccccccccaaaaaacccccaaaacccccccccaaaacccaacaacaaacccccccccccccaaaaaaacccccccccccccccchhhhgggggggggffffffffccaacccccc\n"
+    + "abcccccccaacccccccccccccccccccaaaccccccaaaaaccccccccaaaaccaaaacaaaaacccccccccccccaaaaaaaaccccccccccccccccchhhggggaaaagffffffcccccccccccc\n"
+    + "abcccccccaacccccccccccccaacccccccccccccaaaaaaccaaccccaaaaaaaaacaaaaaacccccccaaaacaaaaaaaacccccccccccaacccccccaaaacaaaacccccccccccccccccc\n"
+    + "abccccaaaaaaaacccccccaacaaaccccccccccccaaccaacaaaacccaaaaaaaacaaaaaaaaccccccaaaaccacaaaccaaaccccaaaaaacccccccaacccaaaacccccccccccccaaaaa\n"
+    + "abccccaaaaaaaacccccccaaaaaccccccccccccccccccccaaaaccccaaaaaaacaaaaaaaaccccccaaaaccccaaaccaaaaaccaaaaaaaacccccccccccaaaccccccccccccccaaaa\n"
+    + "abccccccaaaaccccccccccaaaaaaccccccccccccccccccaaaacccaaaaaaaaaaccaaccccccccccaacccccccccaaaaacccaaaaaaaacccccccccccaaaccccccccccccccaaaa\n"
+    + "abcccccaaaaaacccccccaaaaaaaacccccccccccccccccccccccaaaaaaaaaaaaaaaacccccccccccccccccccccaaaaaacccaaaaaaaccccccccccccccccccccccccccaaaaaa\n"
+    ;
+
+function set_input(value) {
+    let playground = document.getElementById("playground");
+    while (playground.firstChild) {
+        playground.removeChild(playground.lastChild);
+    }
+
+    let state = {
+        queue: [],
+        range: [],
+        active: null,
+        source: null,
+        target: null,
+        push: function(node) {
+            this.queue.push(node);
+            let td = this.range[node.y][node.x].node;
+            td.className = "queue";
+        },
+        front: function() {
+            return this.queue.length == 0? null: this.queue[0];
+        },
+        pop: function() {
+            if (this.active != null) {
+                this.active.node.className = this.active.outstanding == 0? "done": "path";
+            }
+            let node = this.queue.shift();
+            this.active = this.range[node.y][node.x];
+            this.active.node.className = "active";
+        }
+    };
+    let rows = value.split("\n");
+    for (let y = 0; y != rows.length; ++y) {
+        line = rows[y];
+        let row = [];
+        let tr = document.createElement("tr");
+        for (let x = 0; x != line.length; ++x) {
+            let c = line[x];
+            let td = document.createElement("td");
+            td.appendChild(document.createTextNode(c));
+            tr.appendChild(td);
+            row.push({
+                x: x,
+                y: y,
+                node: td,
+                height: (c == 'S'? 'a': c == 'E'? 'z': c).charCodeAt(0),
+                visited: false,
+                prev: null,
+                outstanding: c == 'S'? 1: 0,
+            });
+            if (c == 'S') {
+                state.source = { x: x, y: y };
+            }
+            else if (c == 'E') {
+                state.target = { x: x, y: y };
+            }
+        }
+        state.range.push(row);
+        playground.appendChild(tr);
+    }
+    playground.state = state;
+}
+
+function pause(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function explore(state, source, node) {
+    if (0 <= node.y && node.y < state.range.length
+        && 0 <= node.x && node.x < state.range[node.y].length) {
+        let target = state.range[node.y][node.x];
+        if (target.visited == false
+            && source.height - 1 <= target.height) {
+            state.push(node);
+            target.prev = source;
+            target.visited = true;
+            ++source.outstanding;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+}
+
+function next(state) {
+    let node = state.front();
+    let source = state.range[node.y][node.x];
+    if (node.x == state.source.x && node.y == state.source.y) {
+        state.pop();
+        let n = source;
+        while (n != null) {
+            n.node.className = "final";
+            n = n.prev;
+        }
+        return;
+    }
+
+    let added = explore(state, source, { x: node.x - 1, y: node.y });
+    added = explore(state, source, { x: node.x + 1, y: node.y }) || added;
+    added = explore(state, source, { x: node.x, y: node.y - 1 }) || added;
+    added = explore(state, source, { x: node.x, y: node.y + 1 }) || added;
+    if (!added) {
+        for (let n = source.prev; n != null; n = n.prev) {
+            if (--n.outstanding == 0) {
+                n.className = "done";
+            }
+            else {
+                break;
+            }
+        }
+    }
+    state.pop();
+
+    if (!state.queue.length == 0) {
+        let speed = document.getElementById("speed-value");
+        pause(speed.value).then(() => next(state));
+    }
+}
+
+function start() {
+    let state = document.getElementById("playground").state;
+    state.range[state.target.y][state.target.x].visited = true;
+    state.push(state.target);
+    next(state);
+}
+
+function speedchange(speed) {
+    let value = document.getElementById("speed-value");
+    value.value = speed;
+    let range = document.getElementById("speed-range");
+    range.value = speed;
+}
+
+function init() {
+    // let playground = document.getElementById("playground");
+
+    set_input(example);
+    start();
+}
+        </script>
+        <style>
+           .queue { background-color: lightpink; }
+           .active { background-color: red; }
+           .done { background-color: lightgreen; }
+           .path { background-color: lightgreen; }
+           .final { background-color: green; }
+        </style>
+    </head>
+    <body onload="init()">
+        <table id="playground">
+        </table>
+        <span>
+            <input type="button" value="start" onclick="start()">
+            <input id="speed-range" type="range" min="1" max="300" value="100" oninput="speedchange(this.value)">
+            <input id="speed-value" type="number" min="1" max="300" value="100" oninput="speedchange(this.value)">
+            <input type="button" value="example" onclick="set_input(example)">
+            <input type="button" value="puzzle 1" onclick="set_input(puzzle1)">
+            <input type="button" value="puzzle 2" onclick="set_input(puzzle2)">
+            <input id="tail" type="number" value="0">
+        </span>
+    </body>
+</html>
