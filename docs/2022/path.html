@@ -152,7 +152,7 @@ function prepare() {
                 y: y,
                 node: td,
                 height: (c == 'S'? 'a': c == 'E'? 'z': c).charCodeAt(0),
-                visited: false,
+                len: -1,
                 prev: null,
                 outstanding: c == 'S'? 1: 0,
             });
@@ -177,12 +177,14 @@ function explore(state, source, node) {
     if (0 <= node.y && node.y < state.range.length
         && 0 <= node.x && node.x < state.range[node.y].length) {
         let target = state.range[node.y][node.x];
-        if (target.visited == false
+        if (target.len == -1
             && source.height - 1 <= target.height) {
             state.push(node);
             target.prev = source;
-            target.visited = true;
+            target.len = source.len + 1;
             ++source.outstanding;
+            let len = document.getElementById("length");
+            len.value = target.len;
             return true;
         }
         else {
@@ -232,7 +234,7 @@ function next(state) {
 function start() {
     prepare();
     let state = document.getElementById("playground").state;
-    state.range[state.target.y][state.target.x].visited = true;
+    state.range[state.target.y][state.target.x].len = 0;
     state.push(state.target);
     next(state);
 }
