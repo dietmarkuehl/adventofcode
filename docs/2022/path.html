@@ -178,7 +178,7 @@ function explore(state, source, node) {
         && 0 <= node.x && node.x < state.range[node.y].length) {
         let target = state.range[node.y][node.x];
         if (target.len == -1
-            && source.height - 1 <= target.height) {
+            && state.step_condition(source, target)) {
             state.push(node);
             target.prev = source;
             target.len = source.len + 1;
@@ -199,7 +199,7 @@ function explore(state, source, node) {
 function next(state) {
     let node = state.front();
     let source = state.range[node.y][node.x];
-    if (node.x == state.source.x && node.y == state.source.y) {
+    if (state.end_condition(source)) {
         state.pop();
         let n = source;
         while (n != null) {
@@ -232,10 +232,41 @@ function next(state) {
 }
 
 function start() {
+    let kind = parseInt(document.getElementById("kind").value);
     prepare();
     let state = document.getElementById("playground").state;
-    state.range[state.target.y][state.target.x].len = 0;
-    state.push(state.target);
+    
+    let start = kind == 0 || kind == 2? state.source: state.target;
+    state.step_condition = kind == 0 || kind == 2
+        ? function(s, t) { return t.height <= s.height + 1; }
+        : function(s, t) { return s.height - 1 <= t.height; }
+        ;
+    switch (kind) {
+        case 0:
+            state.end_condition = function(node){
+                return state.target.x == node.x && state.target.y == node.y;
+            };
+            break;
+        case 1:
+            state.end_condition = function(node){
+                return state.source.x == node.x && state.source.y == node.y;
+            };
+            break;
+        case 2:
+            state.end_condition = function(node){
+                return node.height == 'z'.charCodeAt(0);
+            };
+            break;
+        case 3:
+            state.end_condition = function(node){
+                return node.height == 'a'.charCodeAt(0);
+            };
+            break;
+    }
+
+    state.range[start.y][start.x].len = 0;
+    state.push(start);
+
     next(state);
 }
 
@@ -247,8 +278,6 @@ function speedchange(speed) {
 }
 
 function init() {
-    // let playground = document.getElementById("playground");
-
     set_input(example);
 }
         </script>
@@ -265,6 +294,12 @@ function init() {
         </table>
         <span>
             <input type="button" value="start" onclick="start()">
+            <select id="kind">
+                <option value="0" selected>source to target</option>
+                <option value="1">target to source</option>
+                <option value="2">source to top</option>
+                <option value="3">target to bottom</option>
+            </select>
             <input id="speed-range" type="range" min="1" max="300" value="100" oninput="speedchange(this.value)">
             <input id="speed-value" type="number" min="1" max="300" value="100" oninput="speedchange(this.value)">
             <input type="button" value="example" onclick="set_input(example)">
