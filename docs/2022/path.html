@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>Advent of Code 2022: Rope</title>
+        <title>Advent of Code 2022: Path</title>
         <script type="text/javascript">
 let example = ""
     + "Sabqponm\n"
@@ -100,6 +100,14 @@ let puzzle2 = ""
 
 function set_input(value) {
     let playground = document.getElementById("playground");
+    playground.input = value;
+    prepare();
+}
+
+function prepare() {
+    let playground = document.getElementById("playground");
+    value = playground.input;
+
     while (playground.firstChild) {
         playground.removeChild(playground.lastChild);
     }
@@ -220,6 +228,7 @@ function next(state) {
 }
 
 function start() {
+    prepare();
     let state = document.getElementById("playground").state;
     state.range[state.target.y][state.target.x].visited = true;
     state.push(state.target);
