@@ -122,6 +122,8 @@ function prepare() {
             this.queue.push(node);
             let td = this.range[node.y][node.x].node;
             td.className = "queue";
+            let f = document.getElementById("front");
+            f.value = this.queue.length;
         },
         front: function() {
             return this.queue.length == 0? null: this.queue[0];
@@ -266,7 +268,8 @@ function init() {
             <input type="button" value="example" onclick="set_input(example)">
             <input type="button" value="puzzle 1" onclick="set_input(puzzle1)">
             <input type="button" value="puzzle 2" onclick="set_input(puzzle2)">
-            <input id="tail" type="number" value="0">
+            <input id="front" type="number" value="0">
+            <input id="length" type="number" value="0">
         </span>
     </body>
 </html>
