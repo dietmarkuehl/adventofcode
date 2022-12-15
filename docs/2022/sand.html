@@ -238,8 +238,6 @@ function pause(ms) {
 
 function move(state, x, y, draw, clear) {
     if (draw == 1 && clear == 1) {
-        console.log("clear: draw=" + draw + ", clear=" + clear);
-        state.foo();
         state.clear(state.sand.x, state.sand.y);
     }
     state.sand = { x: x, y: y };
@@ -272,19 +270,45 @@ function next() {
            state.occupy(x, y);
            if (x == state.sand.x && y == state.sand.y) {
                console.log("done");
+               state.running = 0;
                return;
            }
            break;
         }
     }
-    let speed = document.getElementById("speed-value");
-    pause(speed.value).then(() => next(state));
+    if (state.stop != 1) {
+        let speed = document.getElementById("speed-value");
+        pause(speed.value).then(() => next(state));
+    }
+    else if (state.restart != null) {
+        state.running = 0;
+        state.restart();
+    }
+}
+
+function control() {
+    let playground = document.getElementById("playground");
+    let control = document.getElementById("control");
+    if (playground.state.running == 0) {
+        control.value = "continue";
+        playground.state.stop = 0;
+        next();
+    }
+    else {
+        control.value = "pause";
+        playground.state.stop = 1;
+    }
 }
 
 function start() {
     let text = document.getElementById("input");
     let playground = document.getElementById("playground");
     let ctx = playground.getContext("2d");
+
+    if (playground.state.running == 1) {
+        playground.state.restart = start;
+        playground.state.stop = 1;
+    }
 
     let walls = parse(text.value);
     let dim = get_dimension(walls);
@@ -296,6 +320,9 @@ function start() {
     let state = {
         ctx: ctx,
         step: 0,
+        running: 1,
+        stop: 0,
+        restart: null,
         scale: min(playground.clientWidth / (width + 1), playground.clientHeight / height),
         walls: walls,
         array: [],
@@ -362,6 +389,11 @@ function speedchange(speed) {
 
 function init() {
     let playground = document.getElementById("playground");
+    playground.state = {
+        stop: 0,
+        running: 0,
+        restart: null
+    };
 
     set_input(small);
 }
@@ -385,9 +417,10 @@ function init() {
         </div>
         <span>
             <input type="button" value="start" onclick="start()">
+            <!-- input type="button" id="control" value="pause" onclick="control()" -->
             <select id="step">
-                <option value="1" selected>step</option>
-                <option value="0">skip</option>
+                <option value="1">step</option>
+                <option value="0" selected>skip</option>
             </select>
             <input id="speed-range" type="range" min="0" max="300" value="100" oninput="speedchange(this.value)">
             <input id="speed-value" type="number" min="0" max="300" value="100" oninput="speedchange(this.value)">
