@@ -66,6 +66,7 @@ std::cout << std::unitbuf;
         std::cout << "\n";
     };
     int total{};
+    print();
     for (std::size_t i = 0; i < rocks.size() * rocks[0].size(); ++i) {
         int x{500 - minx}, y{0};
         while (rocks[y+1][x-1] == '.' || rocks[y+1][x] == '.' || rocks[y+1][x+1] == '.') {
@@ -77,7 +78,7 @@ std::cout << std::unitbuf;
         }
         rocks[y][x] = 'o';
         ++total;
-        //print();
     }
+    print();
     std::cout << total << "\n";
 }
