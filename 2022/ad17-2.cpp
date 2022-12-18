@@ -85,7 +85,18 @@ struct playground {
     }
     void move(shape s) {
         auto it{this->it};
+        char m0{this->next()};
+        char m1{this->next()};
+        if (m0 == m1) {
+            m0 == '<'? s.left(0u): s.right(0u);
+            m1 == '<'? s.left(0u): s.right(0u);
+        }
+        this->next() == '<'? s.left(0u): s.right(0u);
+
         std::uint64_t rows{};
+        rows = (rows << 8) | *++it;
+        rows = (rows << 8) | *++it;
+        rows = (rows << 8) | *++it;
 
         while (true) {
             this->next() == '<'? s.left(rows): s.right(rows);
@@ -119,9 +130,9 @@ int main() {
 
     playground p(instructions);
 
-    static std::size_t split{10000};
-    static std::size_t target{1000000000000};
-    static std::size_t limit{target / split};
+    static constexpr std::size_t split{10000};
+    static constexpr std::size_t target{1000000000000};
+    static constexpr std::size_t limit{target / split};
     std::size_t current{};
     std::size_t next_shape{};
 
