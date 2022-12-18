@@ -1,6 +1,8 @@
 #include <algorithm>
+#include <chrono>
 #include <bitset>
 #include <iomanip>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <iterator>
@@ -22,7 +24,7 @@ struct shape {
     static constexpr std::uint64_t test_left { std::uint64_t{0b10000000'10000000'10000000'10000000} << 24 };
     static constexpr std::uint64_t test_right{ std::uint64_t{0b00000010'00000010'00000010'00000010} << 24 };
     std::uint64_t d_row;
-    shape(std::uint32_t r): d_row(std::uint64_t(r) << 24) {}
+    shape(std::uint32_t r = 0): d_row(std::uint64_t(r) << 24) {}
     friend std::ostream& operator<< (std::ostream& out, shape const& s) {
         for (int i{4}; 0 < i--; ) {
             out << "|" << fmt((s.d_row >> (24 + i * 8 + 1)) & 0xFF) << "|\n";
@@ -44,19 +46,47 @@ std::vector<shape> shapes{
 };
 
 struct playground {
-    using buffer = std::array<unsigned char, 2048>;
-    static constexpr std::size_t cut{1024};
+    using buffer = std::array<unsigned char, 1024>;
+    static constexpr std::size_t cut{512};
+
+    std::array<std::array<shape, 8>, 5> init{};
 
     std::string      instructions;
+    std::string      init_ins;
     std::size_t      next_instruction{};
     buffer           area{};
     buffer::iterator it{area.end() - 6};
     std::size_t      d_size{};
     
+    std::size_t move_to_index(std::string const& s) {
+        return 4 * (s[0] == '<') + 2 * (s[1] == '<') + 1 * (s[2] == '<');
+    }
     playground(std::string const& instructions)
         : instructions(instructions) {
         for (int i = 1; i != 6; ++i) {
             *(this->area.end() - i) = 0b11111110;
+        }
+        using namespace std::string_literals;
+        for (std::size_t i{}; i != shapes.size(); ++i) {
+            for (std::string m: { "<<<"s,"<<>"s,"<><"s,"<>>"s,"><<"s,"><>"s,">><"s,">>>"s }) {
+                shape s{shapes[i]};
+                m[0] == '<'? s.left(0u): s.right(0u);
+                m[1] == '<'? s.left(0u): s.right(0u);
+                m[2] == '<'? s.left(0u): s.right(0u);
+                init[i][move_to_index(m)] = s;
+            }
+        }
+
+        std::string tmp;
+        std::size_t index{};
+        auto next = [&]{ return instructions[index++ % instructions.size()]; };
+        tmp.push_back(next());
+        tmp.push_back(next());
+        tmp.push_back(next());
+        while (init_ins.size() != instructions.size()) {
+            init_ins.push_back(move_to_index(tmp));
+            tmp.erase(tmp.begin());
+            tmp.push_back(next());
         }
     }
     auto start_piece() {
@@ -83,15 +113,11 @@ struct playground {
     char next() {
         return this->instructions[this->next_instruction++ % this->instructions.size()];
     }
-    void move(shape s) {
+    void move(std::size_t index) {
         auto it{this->it};
-        char m0{this->next()};
-        char m1{this->next()};
-        if (m0 == m1) {
-            m0 == '<'? s.left(0u): s.right(0u);
-            m1 == '<'? s.left(0u): s.right(0u);
-        }
-        this->next() == '<'? s.left(0u): s.right(0u);
+
+        shape s{init[index][this->init_ins[this->next_instruction % this->instructions.size()]]};
+        this->next_instruction += 3;
 
         std::uint64_t rows{};
         rows = (rows << 8) | *++it;
@@ -120,29 +146,37 @@ struct playground {
     }
 };
 
-int main() {
+int main(int ac, char *av[]) {
     std::cout << std::unitbuf;
+    std::ifstream fin(ac == 2? av[1]: "");
+    std::istream&  in(fin? fin: std::cin);
     std::string instructions;
-    if (!(std::cin >> instructions)) {
+    if (!(in >> instructions)) {
         std::cout << "couldn't read instructions\n";
         return 0;
     }
 
     playground p(instructions);
 
-    static constexpr std::size_t split{10000};
-    static constexpr std::size_t target{1000000000000};
+    static constexpr bool small{true};
+    static constexpr std::size_t split{small? 1: 10000};
+    static constexpr std::size_t target{small? 2022: 1000000000000};
     static constexpr std::size_t limit{target / split};
+
     std::size_t current{};
     std::size_t next_shape{};
 
+    auto start = std::chrono::steady_clock::now();
     for (std::size_t i{}; i != split; ++i) {
         current += limit;
         for (; next_shape != current; ++next_shape) {
-            shape s(shapes[next_shape % shapes.size()]);
             p.start_piece();
-            p.move(s);
+            p.move(next_shape % shapes.size());
         }
-        std::cout << std::setw(4) << i << " " << next_shape << " " << p.size() << "\n";
+
+        auto now = std::chrono::steady_clock::now();
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count()
+                  << " " << std::setw(4) << i << " " << p.size() << "\n";
+        start = now;
     }
 }
