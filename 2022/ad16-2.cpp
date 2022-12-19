@@ -44,8 +44,14 @@ struct node;
 struct tunnel {
    node* valve;
    int   cost{1};
+   int   d_value{};
+
+   bool ignore(std::vector<bool> const& open) const;
+   int  value(int time, std::vector<bool> const& open) const;
+
    std::ostream& print(std::ostream& out) const;
 
+   std::string target() const;
    friend std::ostream& operator<< (std::ostream& out, tunnel const& t) {
        return t.print(out);
    }
@@ -56,6 +62,8 @@ struct node {
     std::vector<tunnel> tunnels;
     int                 idx{-1};
 
+    std::vector<tunnel>::const_iterator begin() const { return this->tunnels.begin(); }
+    std::vector<tunnel>::const_iterator end() const { return this->tunnels.end(); }
     int index() const { return this->idx; }
     friend std::ostream& operator<< (std::ostream& out, node const& n) {
         out << "valve=" << n.name << " rate=" << n.rate << " [";
@@ -68,8 +76,11 @@ struct node {
     }
 };
 
+bool tunnel::ignore(std::vector<bool> const& open) const { return d_value && open[valve->index()]; }
+int  tunnel::value(int time, std::vector<bool> const& open) const { return open[valve->index()]? 0: (26 - time) * d_value; }
+std::string tunnel::target() const { return this->valve->name; }
 std::ostream& tunnel::print(std::ostream& out) const {
-     return out << "(" << this->valve->name << ", " << this->cost << ")";
+     return out << "(" << this->valve->name << ", " << this->cost << ", " << this->d_value << ")";
 }
 
 struct graph {
@@ -114,6 +125,8 @@ struct graph {
     }
     std::vector<node>::iterator begin() { return this->nodes.begin(); }
     std::vector<node>::iterator end() { return this->nodes.end(); }
+    std::vector<node>::const_iterator begin() const { return this->nodes.begin(); }
+    std::vector<node>::const_iterator end() const { return this->nodes.end(); }
 
     friend std::ostream& operator<< (std::ostream& out, graph const& g) {
         for (node const& n: g.nodes) {
@@ -161,62 +174,177 @@ struct fmt {
     }
 };
 
-int brute(node const& n, node const& en, int time, std::vector<bool> open, std::vector<bool> visited, std::vector<bool> evisited, int np, int limit);
-int brute_step(node const& n, node const& en, int time, std::vector<bool> open, std::vector<bool> visited, std::vector<bool> evisited, int np, int limit) {
-    if (limit <= np) {
-        return 0;
+struct state {
+    int               value{};
+    int               time{};
+    node const*       n0;
+    node const*       n1;
+    std::vector<bool> open;
+    std::vector<bool> v0;
+    std::vector<bool> v1;
+
+    state(node const* start, std::vector<bool> const& open)
+        : n0(start)
+        , n1(start)
+        , open(open)
+        , v0(std::vector<bool>(this->open.size(), false))
+        , v1(std::vector<bool>(this->open.size(), false))
+    {
     }
-    int max{};
-    for (auto const& t: n.tunnels) {
-        if (!visited[t.valve->index()]) {
-            for (auto const& et: en.tunnels) {
-                if (!evisited[et.valve->index()]) {
-                    max = std::max(max, brute(*t.valve, *et.valve, time + t.cost, open, visited, evisited, np + 1, limit));
+private:
+    void traverse(node const*& n, std::vector<bool>& visited, tunnel const& t) {
+        int val = t.value(this->time, this->open);
+        if (val) {
+            this->value = val;
+            this->open[n->index()] = true;
+            visited = std::vector<bool>(visited.size(), false);
+        }
+        else {
+            this->value = 0;
+            visited[n->index()] = true;
+            n = t.valve;
+        }
+    }
+
+public:
+
+    state traverse(tunnel const& t0, tunnel const& t1) const {
+        state rc(*this);
+        ++rc.time;
+        rc.traverse(rc.n0, rc.v0, t0);
+        rc.traverse(rc.n1, rc.v1, t1);
+
+        return rc;
+    }
+
+    int brute() {
+        if (25 < this->time) {
+            return 0;
+        }
+        int max{};
+    
+        for (tunnel const& t0: this->n0->tunnels) {
+            for (tunnel const& t1: this->n1->tunnels) {
+                if (true
+                    && !t0.ignore(this->open)
+                    && !t1.ignore(this->open)
+                    && !this->v0[t0.valve->index()]
+                    && !this->v1[t1.valve->index()]
+                    ) {
+                    state ns{this->traverse(t0, t1)};
+                    //std::cout << space(ns.time) << ns.value << "\n";
+                    int value = ns.brute();
+                    max = std::max(max, ns.value + value);
                 }
             }
         }
+
+        return max;
     }
-    return max;
+};
+
+struct point {
+   double x{}, y{};
+};
+
+void to_xml(graph const& g) {
+    std::unordered_map<std::string, point> positions{
+        { "IX", point{255.8, 166} },
+        { "ZZ", point{222.4, 220.3} },
+        { "TN", point{257.9, 207.2} },
+        { "IF", point{289.1, 146.8} },
+        { "OU", point{322.5, 131.8} },
+        { "DS", point{321.7, 173.1} },
+        { "UH", point{221.3, 111.5} },
+        { "ZQ", point{160.3, 128.7} },
+        { "OP", point{184, 98.3} },
+        { "FS", point{254.2, 130} },
+        { "IS", point{241.7, 301.4} },
+        { "RW", point{295, 247.8} },
+        { "WO", point{269.8, 275.4} },
+        { "SI", point{204.9, 288.9} },
+        { "WZ", point{147.3, 314.1} },
+        { "KQ", point{181, 327.7} },
+        { "EB", point{286.9, 108.8} },
+        { "II", point{235.6, 266.6} },
+        { "GR", point{234.5, 188.9} },
+        { "HA", point{208.1, 178.2} },
+        { "BO", point{255.9, 240.7} },
+        { "RI", point{307.4, 284.1} },
+        { "OW", point{278.4, 314.6} },
+        { "FR", point{175.8, 190.3} },
+        { "MT", point{169.8, 289} },
+        { "DV", point{184.9, 221.1} },
+        { "WG", point{142, 154.7} },
+        { "VE", point{12.2, 199.7} },
+        { "ZK", point{36.1, 96.9} },
+        { "HM", point{137.9, 199.3} },
+        { "XB", point{117.1, 181.9} },
+        { "XC", point{211.7, 322.3} },
+        { "NH", point{30.4, 247.1} },
+        { "AA", point{41.7, 202.4} },
+        { "KO", point{56.7, 146.2} },
+        { "RN", point{191.3, 259.5} },
+        { "MF", point{146.3, 90.6} },
+        { "LK", point{197.3, 134.9} },
+        { "BH", point{120.8, 123.1} },
+        { "KZ: ", point{332, 249.2} },
+        { "GB", point{320.2, 210.4} },
+        { "TC", point{216.8, 246.1} },
+        { "DF", point{83.9, 239} },
+        { "EZ", point{119.9, 269} },
+        { "IU", point{106.4, 360.5} },
+        { "DU", point{75.2, 289.7} },
+        { "RU", point{120.3, 299.3} },
+        { "SX", point{225.2, 150.7} },
+        { "AO", point{287.2, 218.6} },
+        { "MX", point{88.6, 154.6} },
+        { "IP", point{109.4, 333.7} },
+        { "WN", point{212.3, 72.4} },
+        { "NP", point{251, 89.6} },
+        { "VX", point{285.7, 183.6} }
+        };
+
+    std::cout << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+              << "<graphml>\n"
+              << "  <graph id=\"Graph\" uidGraph=\"4\" uidEdge=\"10006\">\n";
+
+    std::size_t id{};
+    std::unordered_map<std::string, std::size_t> ids;
+
+    for (auto const& n: g) {
+        point pos = positions[n.name];
+        auto nid{ids.insert(std::make_pair(n.name, id))};
+        if (nid.second) {
+            ++id;
+        }
+        std::cout << "    <node positionX=\"" << int(3 * pos.x) << "\" positionY=\"" << int(3 * pos.y) << "\" id=\"" << nid.first->second << "\" mainText=\"" << n.name << "\" upText=\"" << n.rate << "\" size=\"30\" ></node>\n";
+    }
+    std::size_t eid{};
+    for (auto const& n: g) {
+        for (auto const& e: n) {
+            std::cout << "    <edge source=\"" << ids[n.name] << "\" target=\"" << ids[e.target()] << "\" "
+                      << "isDirect=\"true\" weight=\"1\" useWeight=\"false\" "
+                      << "id=\"" << eid++ << "\" text=\"\" upText=\"\" arrayStyleStart=\"\" arrayStyleFinish=\"\" model_width=\"4\" model_type=\"0\" model_curveValue=\"0.1\" ></edge>\n";
+        }
+    }
+    std::cout << "  </graph>\n"
+              << "</graphml>\n";
 }
 
-int brute(node const& n, node const& en, int time, std::vector<bool> open, std::vector<bool> visited, std::vector<bool> evisited, int np, int limit) {
-    if (25 < time) {
-        return 0;
+void add_valves(graph& g) {
+    for (node& n: g) {
+        if (0 < n.rate) {
+            n.tunnels.push_back(tunnel{&n, 1, n.rate});
+        }
     }
-    visited[n.index()] = true;
-    evisited[en.index()] = true;
-
-    int max{};
-    max = std::max(max, brute_step(n, en, time, open, visited, evisited, np + 1, limit));
-    if (!open[n.index()]) {
-        int flow(n.rate * (26 - time));
-        open[n.index()] = true;
-        max = std::max(max, flow + brute_step(n, en, time + 1, open, std::vector<bool>(visited.size(), false), evisited, 0, limit+3));
-        open[n.index()] = false;
-    }
-    if (!open[en.index()]) {
-        int flow(en.rate * (26 - time));
-        open[en.index()] = true;
-        max = std::max(max, flow + brute_step(n, en, time + 1, open, evisited, std::vector<bool>(visited.size(), false), 0, limit+3));
-        open[en.index()] = false;
-    }
-    if (&n != &en && !open[n.index()] && !open[en.index()]) {
-        int flow(n.rate * (26 - time) + en.rate * (26 - time));
-        open[n.index()] = true;
-        open[en.index()] = true;
-        max = std::max(max, flow + brute_step(n, en, time + 1, open, std::vector<bool>(visited.size(), false), std::vector<bool>(visited.size(), false), 0, limit+6));
-        open[n.index()] = false;
-        open[en.index()] = false;
-    }
-
-    return max;
 }
 
 int main(int ac, char* av[]) {
     std::cout << std::unitbuf;
     graph g = ac == 2? read(std::ifstream(av[1])): read(std::cin);
+    add_valves(g);
     std::cout << g << "\n";
-    //compact(g);
 
     std::vector<bool> unset(g.size(), false);
     std::vector<bool> open(unset);
@@ -225,7 +353,9 @@ int main(int ac, char* av[]) {
             open[n.index()] = true;
         }
     }
-    auto total = brute(*g.get_node("AA"), *g.get_node("AA"), 1, open, unset, unset, 0, 4);
+
+    state s(g.get_node("AA"), open);
+    auto total = s.brute();
 
     std::cout << total << "\n";
 }

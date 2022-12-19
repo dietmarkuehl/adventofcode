@@ -1,7 +1,7 @@
-NAME     = ad17-2
+NAME     = ad16-2
 CXX      = clang++ 
 CC       = $(CXX)
-CXXFLAGS = -W -Wall -g -O2 -std=c++20
+CXXFLAGS = -W -Wall -g -std=c++20
 
 .PHONY: default clean run
 

@@ -1,351 +1,54 @@
-#include <algorithm>
-#include <iomanip>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <iterator>
-#include <string>
-#include <unordered_map>
-#include <unordered_set>
-#include <queue>
-#include <vector>
-
-// ----------------------------------------------------------------------------
-
-std::istream& ignore_to_eq(std::istream& in) {
-    return in.ignore(std::numeric_limits<std::streamsize>::max(), '=');
-}
-std::istream& ignore_comma(std::istream& in) {
-    return in.ignore(std::numeric_limits<std::streamsize>::max(), ',');
-}
-template <int I>
-std::istream& ignore_word(std::istream& in) {
-    std::string word;
-    for (int i{}; i != I; ++i) {
-        in >> word;
-    }
-    return in;
-}
-
-struct space {
-    int s;
-    space(int s): s(s) {}
-    friend std::ostream& operator<< (std::ostream& out, space const& x) {
-        for (int i{}; i != x.s; ++i) {
-            out << "   ";
-        }
-        return out;
-    }
-};
-
-// ----------------------------------------------------------------------------
-
-struct node;
-struct tunnel {
-   node* valve;
-   int   cost{1};
-   std::ostream& print(std::ostream& out) const;
-
-   friend std::ostream& operator<< (std::ostream& out, tunnel const& t) {
-       return t.print(out);
-   }
-};
-struct node {
-    std::string         name;
-    int                 rate;
-    std::vector<tunnel> tunnels;
-    int                 idx{-1};
-
-    int index() const { return this->idx; }
-    friend std::ostream& operator<< (std::ostream& out, node const& n) {
-        out << "valve=" << n.name << " rate=" << n.rate << " [";
-        bool comma(false);
-        for (auto const& tunnel: n.tunnels) {
-            out << (comma? ", ": "") << tunnel;
-            comma = true;
-        }
-        return out << "]";
-    }
-};
-
-std::ostream& tunnel::print(std::ostream& out) const {
-     return out << "(" << this->valve->name << ", " << this->cost << ")";
-}
-
-struct graph {
-    int next{};
-    std::unordered_map<std::string, int> name_to_index;
-    std::vector<node> nodes;
-
-    graph() { nodes.reserve(100); }
-    graph(graph&&) = delete;
-    graph(std::istream& in)
-        :graph() {
-        std::string valve;
-        int         rate;
-        std::vector<tunnel> tunnels;
-        for (std::string line; std::getline(in, line); ) {
-            if (std::istringstream lin(line); lin >> ignore_word<1> >> valve >> ignore_to_eq >> rate >> ignore_word<5>) {
-                for (std::string tun; std::getline(lin >> std::ws, tun, ','); ) {
-                    tunnels.push_back({this->get_node(tun)});
-                }
-            }
-            this->set(valve, {valve, rate, tunnels});
-            tunnels.clear();
-        }
-    }
-    std::size_t size() const { return this->nodes.size(); }
-    node* get_node(std::string const& name) {
-        return &this->nodes[this->index(name)];
-    }
-    void erase(node* n) { n->name.clear(); }
-    int index(std::string const& v) {
-        auto p = this->name_to_index.insert({ v, next });
-        if (p.second) {
-            ++next;
-            this->nodes.resize(this->next);
-        }
-        return p.first->second;
-    }
-    void set(std::string const& v, node n) {
-        int index = this->index(v);
-        n.idx = index;
-        this->nodes[index] = n;
-    }
-    std::vector<node>::iterator begin() { return this->nodes.begin(); }
-    std::vector<node>::iterator end() { return this->nodes.end(); }
-
-    friend std::ostream& operator<< (std::ostream& out, graph const& g) {
-        for (node const& n: g.nodes) {
-            if (!n.name.empty()) {
-                out << n << "\n";
-            }
-        }
-        return out;
-    }
-};
-
-auto read(auto&& in) {
-    return graph(in);
-}
-
-
-#if 0
-struct mark {
-    bool& m;
-    mark(mark&&) = delete;
-    mark(bool& m): m(m) { m = true; }
-    ~mark() { m = false; }
-};
-
-int travers(auto& graph, std::string const& current, int time, std::unordered_set<std::string> visited) {
-    if (time < 1) {
-        return 0;
-    }
-    node& n = graph[current];
-    if (!visited.insert(current).second) {
-        return 0;
-    }
-
-    int max{};
-    for (auto const& next: n.tunnels) {
-        max = std::max(max, travers(graph, next.valve, time - 1, visited));
-    }
-
-    if (!n.open && 0 < n.rate) {
-        mark open_guard(n.open);
-        for (auto const& next: n.tunnels) {
-            max = std::max(max, n.rate * time + travers(graph, next.valve, time - 1, {}));
-        }
-    }
-    return max;
-}
-
-auto compact(auto graph) {
-    std::vector<std::string> rm;
-    for (auto& n: graph) {
-        if (n.second.rate == 0 && n.second.tunnels.size() == 2) {
-            rm.push_back(n.first);
-            tunnel t0(n.second.tunnels[0]);
-            tunnel t1(n.second.tunnels[1]);
-            node& n0 = graph[t0.valve];
-            node& n1 = graph[t1.valve];
-            auto it0 = std::find_if(n0.tunnels.begin(), n0.tunnels.end(), [&n](auto& t){ return n.first == t.valve; });
-            assert(it0 != n0.tunnels.end());
-            auto it1 = std::find_if(n1.tunnels.begin(), n1.tunnels.end(), [&n](auto& t){ return n.first == t.valve; });
-            assert(it1 != n1.tunnels.end());
-            n0.tunnels.erase(it0);
-            n1.tunnels.erase(it1);
-            n0.tunnels.push_back({ t1.valve, t0.cost + t1.cost });
-            n1.tunnels.push_back({ t0.valve, t0.cost + t1.cost });
-        }
-    }
-    for (auto const& n: rm) {
-       auto it = graph.find(n);
-       if (it != graph.end()) {
-           graph.erase(it);
-       }
-    }
-    return graph;
-}
-
-struct move {
-    std::string valve;
-    int         distance;
-    bool operator< (move const& o) const { return this->distance > o.distance; }
-};
-
-void push(auto& queue, node& n, int distance) {
-    if (n.visited) {
-        return;
-    }
-    n.visited = true;
-    for (auto const& t: n.tunnels) {
-        queue.push({ t.valve, t.cost + distance });
-    }
-}
-
-int greedy(auto graph, std::string current, int time, int indent) {
-    std::cout << space(indent) << "greedy(" << current << ", " << time << ")\n";
-    if (time < 1) {
-        return 0;
-    }
-    int flow = graph[current].rate * time;
-    graph[current].open = true;
-
-    auto tmp(graph);
-
-    std::priority_queue<move> queue;
-    push(queue, tmp[current], 0);
-    std::cout << space(indent + 1) << "queue=" << queue.size() << "\n";
-
-    std::string next;
-    int         next_flow{};
-    int         next_cost;
-
-    while (!queue.empty()) {
-        move m = queue.top();
-        queue.pop();
-        push(queue, tmp[m.valve], m.distance);
-        if (!tmp[m.valve].open) {
-            int f = tmp[m.valve].rate * (time - m.distance - 1) + greedy(tmp, m.valve, time - m.distance + 1, indent + 1);
-            std::cout << space(indent + 1) << m.valve << " -> " << f << "\n";
-            if (tmp[m.valve].open == false && next_flow < f) {
-                next = m.valve;
-                next_flow = f;
-                next_cost = m.distance + 1;
-            }
-        }
-    }
-
-    return flow + (next.empty()? 0: greedy(graph, next, time - next_cost, indent));
-}
-#endif
-
-void compact(graph& g) {
-    std::vector<node*> rm;
-    for (auto& n: g) {
-        if (n.rate == 0 && n.tunnels.size() == 2) {
-            rm.push_back(&n);
-            tunnel t0(n.tunnels[0]);
-            tunnel t1(n.tunnels[1]);
-            node& n0 = *t0.valve;
-            node& n1 = *t1.valve;
-            auto it0 = std::find_if(n0.tunnels.begin(), n0.tunnels.end(), [&n](auto& t){ return &n == t.valve; });
-            auto it1 = std::find_if(n1.tunnels.begin(), n1.tunnels.end(), [&n](auto& t){ return &n == t.valve; });
-            n0.tunnels.erase(it0);
-            n1.tunnels.erase(it1);
-            n0.tunnels.push_back({ t1.valve, t0.cost + t1.cost });
-            n1.tunnels.push_back({ t0.valve, t0.cost + t1.cost });
-        }
-    }
-    for (auto const& n: rm) {
-        g.erase(n);
-    }
-}
-
-struct fmt {
-    std::vector<bool> v;
-    friend std::ostream& operator<< (std::ostream& out, fmt const& v) {
-        for (std::size_t i{0}; i != v.v.size(); ++i) {
-           out << (v.v[i]? '@': '-');
-        }
-        return out;
-    }
-};
-
-int brute(node const& n, int time, std::vector<bool> open, std::vector<bool> visited, auto const& comp, int indent) {
-    if (29 < time) {
-        return 0;
-    }
-    visited[n.index()] = true;
-    //std::cout << fmt{visited} << " o=" << fmt{open} << space(indent) << "time=" << time << " n=" << n.name << "\n";
-
-    int max{};
-    for (auto const& t: n.tunnels) {
-         if (!visited[t.valve->index()]) {
-             max = std::max(max, brute(*t.valve, time + t.cost, open, visited, comp, indent + 1));
-         }
-    }
-    if (!open[n.index()]) {
-        int flow(n.rate * (30 - time));
-        open[n.index()] = true;
-        if (false && comp[time].second == &n && comp[time].first == open) {
-            std::cout << "match      e=" << fmt{comp[time].first} << " time=" << time << " " << n << "\n";
-        }
-        //std::cout << fmt{visited} << " o=" << fmt{open} << space(indent) << "time=" << time << " n=" << n.name << "\n";
-        for (auto const& t: n.tunnels) {
-            max = std::max(max, flow + brute(*t.valve, time + t.cost + 1, open, std::vector<bool>(visited.size(), false), comp, indent + 1));
-        }
-    }
-
-    return max;
-}
-
-int main(int ac, char* av[]) {
-    std::cout << std::unitbuf;
-    graph g = ac == 2? read(std::ifstream(av[1])): read(std::cin);
-    compact(g);
-    std::cout << g << "\n";
-
-    int idx{};
-    std::vector<std::pair<std::vector<bool>, node*>> comp(31);
-    std::vector<bool> aux(g.size(), false);
-    std::cout << "   ";
-    for (auto n: g.nodes) {
-        std::cout << (n.name.empty()? ' ': n.name[0]);
-    }
-    std::cout << " ";
-    for (auto n: g.nodes) {
-        std::cout << (n.name.empty()? ' ': n.name[0]);
-    }
-    std::cout << "\n";
-
-    bool mark_AA = true;
-    if (mark_AA) aux[idx = g.index("AA")] = true;
-    aux[idx = g.index("DD")] = true;
-    comp[2] = { aux, &g.nodes[idx] };
-    aux[idx = g.index("BB")] = true;
-    comp[5] = { aux, &g.nodes[idx] };
-    aux[idx = g.index("JJ")] = true;
-    comp[9] = { aux, &g.nodes[idx] };
-    aux[idx = g.index("HH")] = true;
-    comp[17] = { aux, &g.nodes[idx] };
-    aux[idx = g.index("EE")] = true;
-    comp[21] = { aux, &g.nodes[idx] };
-    aux[idx = g.index("CC")] = true;
-    comp[24] = { aux, &g.nodes[idx] };
-    for (std::size_t i{}; i != comp.size(); ++i) {
-        if (comp[i].second) {
-            std::cout << std::setw(2) << i << " " << fmt{comp[i].first} << " " << comp[i].second->name << "\n";
-        }
-    }
-
-
-    std::vector<bool> unset(g.size(), false);
-    std::vector<bool> open(unset);
-    if (mark_AA) open[g.get_node("AA")->index()] = true;
-    auto total = brute(*g.get_node("AA"), 1, open, unset, comp, 0);
-
-    std::cout << total << "\n";
-}
+Valve TN has flow rate=0; tunnels lead to valves IX, ZZ
+Valve DS has flow rate=0; tunnels lead to valves IF, OU
+Valve OP has flow rate=0; tunnels lead to valves UH, ZQ
+Valve FS has flow rate=0; tunnels lead to valves IF, UH
+Valve WO has flow rate=0; tunnels lead to valves IS, RW
+Valve KQ has flow rate=0; tunnels lead to valves SI, WZ
+Valve IX has flow rate=0; tunnels lead to valves IF, TN
+Valve OU has flow rate=0; tunnels lead to valves EB, DS
+Valve ZZ has flow rate=10; tunnels lead to valves II, GR, HA, BO, TN
+Valve OW has flow rate=0; tunnels lead to valves RI, IS
+Valve DV has flow rate=0; tunnels lead to valves FR, MT
+Valve ZK has flow rate=0; tunnels lead to valves WG, VE
+Valve XB has flow rate=0; tunnels lead to valves WG, HM
+Valve XC has flow rate=0; tunnels lead to valves IS, MT
+Valve KO has flow rate=0; tunnels lead to valves NH, AA
+Valve RN has flow rate=0; tunnels lead to valves AA, MT
+Valve ZQ has flow rate=5; tunnels lead to valves MF, LK, OP
+Valve MF has flow rate=0; tunnels lead to valves ZQ, BH
+Valve HA has flow rate=0; tunnels lead to valves LK, ZZ
+Valve GB has flow rate=0; tunnels lead to valves KZ, RW
+Valve KZ has flow rate=24; tunnels lead to valves GB, RI
+Valve TC has flow rate=0; tunnels lead to valves SI, AA
+Valve II has flow rate=0; tunnels lead to valves SI, ZZ
+Valve EZ has flow rate=0; tunnels lead to valves DF, MT
+Valve LK has flow rate=0; tunnels lead to valves HA, ZQ
+Valve DU has flow rate=0; tunnels lead to valves NH, IU
+Valve MT has flow rate=3; tunnels lead to valves EZ, XC, RN, DV, RU
+Valve GR has flow rate=0; tunnels lead to valves SX, ZZ
+Valve SX has flow rate=0; tunnels lead to valves UH, GR
+Valve BO has flow rate=0; tunnels lead to valves ZZ, AO
+Valve WG has flow rate=16; tunnels lead to valves FR, MX, XB, ZK
+Valve IP has flow rate=8; tunnels lead to valves HM, RU, WZ, IU
+Valve RI has flow rate=0; tunnels lead to valves OW, KZ
+Valve NP has flow rate=0; tunnels lead to valves WN, EB
+Valve IF has flow rate=19; tunnels lead to valves IX, DS, VX, FS
+Valve AA has flow rate=0; tunnels lead to valves RN, KO, TC, MX
+Valve IS has flow rate=15; tunnels lead to valves OW, WO, XC
+Valve BH has flow rate=11; tunnel leads to valve MF
+Valve SI has flow rate=4; tunnels lead to valves KQ, II, TC
+Valve WN has flow rate=0; tunnels lead to valves UH, NP
+Valve RW has flow rate=18; tunnels lead to valves WO, GB
+Valve DF has flow rate=0; tunnels lead to valves NH, EZ
+Valve WZ has flow rate=0; tunnels lead to valves KQ, IP
+Valve HM has flow rate=0; tunnels lead to valves XB, IP
+Valve VX has flow rate=0; tunnels lead to valves AO, IF
+Valve MX has flow rate=0; tunnels lead to valves AA, WG
+Valve NH has flow rate=13; tunnels lead to valves VE, KO, DU, DF
+Valve RU has flow rate=0; tunnels lead to valves MT, IP
+Valve IU has flow rate=0; tunnels lead to valves IP, DU
+Valve VE has flow rate=0; tunnels lead to valves ZK, NH
+Valve FR has flow rate=0; tunnels lead to valves WG, DV
+Valve AO has flow rate=21; tunnels lead to valves BO, VX
+Valve EB has flow rate=22; tunnels lead to valves OU, NP
+Valve UH has flow rate=12; tunnels lead to valves WN, OP, SX, FS
