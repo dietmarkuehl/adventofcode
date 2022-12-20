@@ -44,7 +44,6 @@ void apply_mix(std::vector<node*> const& nodes) {
             std::cout << "\n";
         }
     };
-    print();
     for (node* it: nodes) {
         std::int64_t i = it->value;
         if (i < 0) {
@@ -55,33 +54,40 @@ void apply_mix(std::vector<node*> const& nodes) {
             }
             pos->append(it);
         }
-        else if (0 < i) {
-            auto pos = it->next;
-            it->erase();
-            for (i = i % (nodes.size() - 1); i != 0 && --i; ) {
-                pos = pos->next;
+        else {
+            i = i % (nodes.size() - 1);
+            if (i != 0) {
+                auto pos = it->next;
+                it->erase();
+                while (--i) {
+                    pos = pos->next;
+                }
+                pos->append(it);
             }
-            pos->append(it);
         }
-        print();
     }
+    print();
 }
 
 int main() {
+    constexpr std::int64_t key{811589153};
     std::cout << std::unitbuf;
     std::vector<std::int64_t> input(std::istream_iterator<std::int64_t>(std::cin), std::istream_iterator<std::int64_t>{});
     std::vector<node*> nodes;
     node* start = new node(0);
     node* mix = start;
     for (std::int64_t i: input) {
-       nodes.push_back(new node(i));
+       nodes.push_back(new node(i * key));
        mix = mix->append(nodes.back());
     }
     delete start->erase();
 
-    apply_mix(nodes);
+    for (int i{}; i != 10; ++i) {
+        apply_mix(nodes);
+    }
     node* it = nodes.front()->find(0);
 
+    std::cout << std::numeric_limits<std::int64_t>::max() << "\n";
     std::int64_t total{};
     for (int i{}; i != 3; ++i) {
         for (int j{}; j != 1000; ++j) {
