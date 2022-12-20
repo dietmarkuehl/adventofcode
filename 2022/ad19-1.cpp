@@ -159,6 +159,6 @@ int main() {
     std::vector<blueprint> bps(std::istream_iterator<blueprint>(std::cin), std::istream_iterator<blueprint>{});
     for (auto const& b: bps) {
         std::cout << "blueprint:\n" << b << "\n";
-        std::cout << process(b, factory(b), 0) << "\n";
+        //std::cout << process(b, factory(b), 0) << "\n";
     }
 }
