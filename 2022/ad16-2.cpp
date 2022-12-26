@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <queue>
 #include <vector>
+#include <queue>
 
 // ----------------------------------------------------------------------------
 
@@ -50,8 +51,6 @@ int   max_time = 26;
 struct node;
 struct tunnel {
    node* valve;
-   std::function<int(int, flags&)> value{[](int, flags&){ return 0; }};
-
    std::ostream& print(std::ostream& out) const;
 
    friend std::ostream& operator<< (std::ostream& out, tunnel const& t) {
@@ -79,8 +78,7 @@ struct node {
 };
 
 std::ostream& tunnel::print(std::ostream& out) const {
-     flags open{};
-     return out << this->valve->name << "(" << this->value(max_time - 1, open) << ")";
+     return out << this->valve->name;
 }
 
 struct graph {
@@ -142,100 +140,136 @@ auto read(auto&& in) {
     return graph(in);
 }
 
-struct state {
-    int               value{};
-    int               time{};
-    node const*       n0;
-    node const*       n1;
-    flags open;
-    flags v0;
-    flags v1;
-
-    state(node const* start)
-        : n0(start)
-        , n1(start)
-        , open()
-        , v0()
-        , v1()
-    {
-    }
-private:
-    void traverse(node const*& n, flags& visited, tunnel const& t) {
-        int value = t.value(this->time, this->open);
-        this->value += value;
-        if (value) {
-            visited = open;
-        }
-        else {
-            visited[n->index()] = true;
-        }
-        n = t.valve;
-    }
-
-public:
-
-    state traverse(tunnel const& t0, tunnel const& t1) const {
-        std::cout << n0->name << ", " << n1->name << " ";
-        state rc(*this);
-        ++rc.time;
-        rc.traverse(rc.n0, rc.v0, t0);
-        rc.traverse(rc.n1, rc.v1, t1);
-        std::cout << "\n";
-
-        return rc;
-    }
-
-    int brute() {
-        if (max_time == this->time) {
-            return this->value;
-        }
-        int max{};
-        //std::cout << "time=" << this->time << " n0=" << this->n0->name << " n1=" << this->n1->name << " value=" << this->value << "\n";
-    
-        for (tunnel const& t0: this->n0->tunnels) {
-            for (tunnel const& t1: this->n1->tunnels) {
-                if (true
-                    && !this->v0[t0.valve->index()]
-                    && !this->v1[t1.valve->index()]
-                    ) {
-                    if (this->n0 != this->n1 || t0.valve != t1.valve) {
-                        state ns{this->traverse(t0, t1)};
-                        //std::cout << space(ns.time) << ns.value << "\n";
-                        max = std::max(max, ns.brute());
-                    }
-                }
+void shortest(node const* n, std::vector<std::size_t>& dist, std::vector<bool> marker) {
+    std::queue<std::pair<node const*, std::size_t>> q;
+    marker[n->index()] = true;
+    q.push({ n, std::size_t{} });
+    while (!q.empty()) {
+        auto p = q.front();
+        q.pop();
+        dist[p.first->index()] = p.second;
+        for (tunnel const& i: *p.first) {
+            node const* a = i.valve;
+            if (!marker[a->idx]) {
+                marker[a->idx] = true;
+                q.push({ a, p.second + 1u });
             }
-        }
-
-        return max;
-    }
-};
-
-void add_valves(graph& g) {
-    std::vector<node*> nodes;
-    for (node& n: g) {
-        nodes.push_back(&n);
-    }
-    for (node* n: nodes) {
-        if (0 < n->rate) {
-            node* vn = g.get_node(n->name + "'");
-            vn->tunnels = n->tunnels;
-            n->tunnels.push_back(tunnel{vn, [index=vn->index(), rate=n->rate, s=n->name, t=vn->name](int time, flags& open){
-                std::cout << "time=" << time << " (" << s << ", " << t << ") -> " << (open[index]? 0: (max_time - time) * rate);
-                return open[index]? 0: (open[index] = true, (max_time - time) * rate);
-                }});
         }
     }
 }
 
+using simulation_time = int;
+
+struct sequence {
+    int value{};
+    std::vector<std::pair<simulation_time, node const*>> seq;
+    bool operator< (sequence const& other) const { return this->value < other.value; }
+
+    friend std::ostream& operator<< (std::ostream& out, sequence const& s) {
+        out << s.value;
+        for (auto const& seq: s.seq) {
+            out << " (" << seq.first << ", " << seq.second->name << ")";
+        }
+        return out;
+    }
+};
+
+struct state {
+    using next_elem = std::pair<simulation_time, node const*>;
+    using next_list = std::vector<next_elem>;
+
+    std::vector<std::vector<std::size_t>> const& allpair;
+    std::vector<node const*> const&              nodes;
+    int*                                         overall_max;
+
+    int                remaining_flow;
+    sequence           flow{};
+    std::vector<bool>  open;
+
+    std::priority_queue<next_list, std::vector<next_list>,
+                        decltype([](auto const& l1, auto const& l2){ return l1.back().first > l2.back().first; })> queue;
+
+    state(auto const& allpair, std::vector<node const*> const& nodes, int* overall_max,
+          node const* start, std::size_t size, int total_flow, std::vector<node const*> allNodes)
+        : allpair(allpair)
+        , nodes(nodes)
+        , overall_max(overall_max)
+        , remaining_flow(total_flow)
+        , open(size, false) {
+        for (auto n: allNodes) {
+            if (n->rate == 0) {
+                open[n->index()] = true;
+            }
+        }
+        this->push(0, start);
+        this->push(0, start);
+    }
+    bool empty() const { return this->queue.empty(); }
+    void push(simulation_time time, node const* current) {
+        state::next_list list;
+        for (auto next: this->nodes) {
+            int dist(1u + this->allpair[current->index()][next->index()]);
+            if (!this->open[next->index()]
+                && (*this->overall_max < this->flow.value + this->remaining_flow * (max_time - (time + dist - 1)))
+                ) {
+                list.emplace_back(time + dist, next);
+            }
+        }
+        if (!list.empty()) {
+            std::sort(list.begin(), list.end(), std::greater<>());
+            this->queue.emplace(list);
+        }
+    }
+};
+
+sequence search(state s) {
+    if (s.empty()) {
+        *s.overall_max = std::max(*s.overall_max, s.flow.value);
+        return s.flow;
+    }
+    auto list = s.queue.top();
+    s.queue.pop();
+    auto[time, current] = list.back();
+    list.pop_back();
+
+    sequence max{s.flow};
+    if (!list.empty()) {
+        state ts{s};
+        ts.queue.emplace(list);
+        max = search(ts);
+    }
+
+    if (!s.open[current->index()]) {
+        s.open[current->index()] = true;
+        s.flow.value += (max_time - time) * current->rate;
+        s.flow.seq.emplace_back(time, current);
+        s.remaining_flow -= current->rate;
+
+        s.push(time, current);
+
+        max = std::max(max, search(s));
+    }
+    *s.overall_max = std::max(*s.overall_max, s.flow.value);
+    return max;
+}
+
 int main(int ac, char* av[]) {
-    std::cout << std::unitbuf;
     graph g = ac == 2? read(std::ifstream(av[1])): read(std::cin);
-    add_valves(g);
-    std::cout << g << "\n";
 
-    state s(g.get_node("AA"));
-    auto total = s.brute();
+    int total_flow{};
+    std::vector<node const*> nodes;
+    for (auto& n: g) {
+        total_flow += n.rate;
+        nodes.push_back(&n);
+    }
 
+    std::vector<std::vector<std::size_t>> allpair(nodes.size(), std::vector<std::size_t>(nodes.size(), 0));
+    std::vector<bool> marker(g.size(), false);
+    for (node const* n: nodes) {
+        shortest(n, allpair[n->index()], marker);
+    }
+
+    int max{};
+    sequence total = search(state(allpair, nodes, &max, g.get_node("AA"), nodes.size(), total_flow, nodes));
     std::cout << total << "\n";
 }
