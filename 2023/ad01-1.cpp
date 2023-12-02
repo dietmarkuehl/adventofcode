@@ -1,23 +1,25 @@
 #include <algorithm>
 #include <iostream>
-#include <sstream>
-#include <iterator>
 #include <string>
-#include <unordered_map>
-#include <vector>
 #include <cctype>
+#include <cstdlib>
 
-int main() {
+constexpr auto is_digit = [](unsigned char c){ return std::isdigit(c); };
+int main()
+{
     int sum{};
-    auto digit = [](unsigned char c){ return std::isdigit(c); };
+    auto getdigit = [](auto begin, auto end)
+    {
+        return *std::find_if(begin, end, is_digit);
+    };
     for (std::string line; std::cin >> line; )
     {
-        auto it = std::find_if(line.begin(), line.end(), digit);
-        auto rit = std::find_if(line.rbegin(), line.rend(), digit);
-        std::string v;
-        v.push_back(*it);
-        v.push_back(*rit);
-        sum += std::atoi(v.c_str());
+        char v[] = {
+            getdigit(line.begin(), line.end()),
+            getdigit(line.rbegin(), line.rend()),
+            char{}
+        };
+        sum += std::atoi(v);
     }
     std::cout << sum << "\n";
 }

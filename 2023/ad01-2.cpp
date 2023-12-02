@@ -7,37 +7,34 @@
 #include <vector>
 #include <cctype>
 
-int main() {
-    std::cout << std::unitbuf;
-    std::string digits[] = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-    std::string rdigits[] = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-    for (auto& s: rdigits)
-    {
-        std::reverse(s.begin(), s.end());
-    }
+constexpr auto is_digit = [](unsigned char c){ return std::isdigit(c); };
+std::string const digits[] = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
+
+int main()
+{
     int sum{};
-    auto digit = [](unsigned char c){ return std::isdigit(c); };
-    auto find = [=](std::string const& line, auto const& digits) {
-        auto it = std::find_if(line.begin(), line.end(), digit);
-        char v = *it;
-        for (std::size_t i{0}; i < std::size(digits); ++i) {
-            auto const& d{digits[i]};
-            auto pos = line.find(d);
-            if (pos != line.npos && line.begin() + pos < it)
-            {
-                it = line.begin() + pos;
-                v = '0' + i+1;
+    auto getdigit = [](auto begin, auto end, auto make_range){
+        auto it(std::find_if(begin, end, is_digit));
+        char rc{it == end? '0': *it};
+        for (auto const& digit: digits) {
+            auto wit = std::search(begin, end, make_range(digit).first, make_range(digit).second);
+            if (wit < it) {
+                it = wit;
+                rc = '1' + &digit - digits;
             }
         }
-        return v;
+        return rc;
     };
     for (std::string line; std::cin >> line; )
     {
-        std::string v;
-        v.push_back(find(line, digits));
-        std::reverse(line.begin(), line.end());
-        v.push_back(find(line, rdigits));
-        sum += std::atoi(v.c_str());
+        char v[] = {
+            getdigit(line.begin(), line.end(),
+                     [](auto const& s){ return std::pair{s.begin(), s.end()}; }),
+            getdigit(line.rbegin(), line.rend(),
+                     [](auto const& s){ return std::pair{s.rbegin(), s.rend()}; }),
+            char{}
+        };
+        sum += std::atoi(v);
     }
     std::cout << sum << "\n";
 }
