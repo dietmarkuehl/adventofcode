@@ -1,34 +1,26 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include <iterator>
 #include <string>
 #include <unordered_map>
-#include <vector>
-#include <limits>
 
 int main() {
     int id{};
     int sum{};
+    std::unordered_map<std::string, int> limits{{"red", 12}, {"green", 13}, {"blue", 14}};
     for (std::string dummy, line; std::getline(std::cin >> dummy >> id >> dummy, line); )
     {
-        std::string draw;
-        bool valid(true);
-        for (std::istringstream lin(line); std::getline(lin, draw, ';'); )
+        std::replace(line.begin(), line.end(), ';', ',');
+        int cubes{};
+        std::string color;
+        for (std::istringstream lin(line); std::getline(lin >> cubes >> std::ws, color, ','); )
         {
-            int cubes{};
-            std::string color;
-            for (std::istringstream lin(draw); std::getline(lin >> cubes >> std::ws, color, ','); )
+            if (limits[color] < cubes)
             {
-                if ((color == "red" && 12 < cubes)
-                    || (color == "green" && 13 < cubes)
-                    || (color == "blue" && 14 < cubes))
-                {
-                    valid = false;
-                }
+                id = 0;
             }
         }
-        sum += valid? id: 0;
+        sum += id;
     }
     std::cout << sum << "\n";
 }
