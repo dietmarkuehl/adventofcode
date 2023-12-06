@@ -1,4 +1,4 @@
-NAME     = ad04-2
+NAME     = ad06-2
 CXX      = clang++ 
 CC       = $(CXX)
 CXXFLAGS = -W -Wall -g -std=c++20
