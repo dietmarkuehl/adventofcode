@@ -54,7 +54,7 @@ std::uint64_t pow10(int p) {
 
 int main() {
     std::vector<std::uint64_t> data{std::istream_iterator<std::uint64_t>(std::cin), {}};
-    std::vector<std::array<std::uint64_t, 75>> cache(1000);
+    std::vector<std::array<std::uint64_t, 75>> cache(512);
 
     std::uint64_t sum{};
     for (auto d: data) {
