@@ -1,4 +1,4 @@
-NAME     = ad16-1
+NAME     = ad18-2
 CXX      = clang++ 
 CC       = $(CXX)
 CXXFLAGS = -W -Wall -g -std=c++20 -O3 -fsanitize=undefined
@@ -10,7 +10,7 @@ default: $(NAME).cpp test
 
 run: $(NAME)
 	@echo running ./$(NAME) with actual inputs
-	@if [ -f $(NAME).in ]; then ./$(NAME) < $(NAME).in; else ./$(NAME); fi
+	@if [ -f $(NAME).in ]; then ./$(NAME) 1 < $(NAME).in; else ./$(NAME); fi
 	@if [ -f $(NAME).exp ]; then cat $(NAME).exp; fi
 
 add:
